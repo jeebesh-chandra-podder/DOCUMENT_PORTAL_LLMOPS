@@ -50,3 +50,10 @@ git push
 ```
 git clone https://github.com/sunnysavita10/document_portal.git
 ```
+
+
+### minimum requirement for this project
+1. LLM Model ##groq(FREE), open-ai(PAID), gemini(15 day FREE), claude(PAID), huggingface(FREE), ollama(LOCAL SETUP)
+2. Embedding Model ## open-ai, hf, gemini
+3. Vector Database ## inmemory ## ondisk ## cloudbased
+

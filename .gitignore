@@ -1,3 +1,5 @@
 env
 document_portal
 *.pyc
+.env
+document_portal.egg-info
