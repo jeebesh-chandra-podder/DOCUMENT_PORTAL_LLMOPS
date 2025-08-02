@@ -12,34 +12,48 @@ from langchain_groq import ChatGroq
 
 from logger.custom_logger import CustomLogger
 from exception.custom_exception import DocumentPortalException
+
+''' - The __name__ variable automatically gives the logger the name of the file (model_loader). 
+    - This is a powerful convention for filtering logs from different parts of your application later on. '''
 log = CustomLogger().get_logger(__name__)
 
 class ModelLoader:
-    
-
 #   A utility class to load embedding models and LLM models.
+    ''' *********************************************************************************************************************************************************************************************************************** '''
     def __init__(self):
         
+        ''' - Loads key-value pairs from a .env file into the process environment. 
+            - “Credentials live outside code.” A reflex that prevents accidental key leaks. '''
         load_dotenv()
+        
+        ''' - Immediately checks that required environment variables exist.
+            - Don’t postpone validation—runtime errors are harder to trace. '''
         self._validate_env()
+        
+        ''' - Loads the YAML configuration file.
+            - The config file contains model parameters and other settings. '''
         self.config=load_config()
+        
         log.info(
             "Configuration loaded successfully", 
             config_keys=list(self.config.keys())
         )
 
-#   Validate config structure
+    ''' *********************************************************************************************************************************************************************************************************************** '''
+    ''' - Validate necessary environment variables.
+        - Ensure API keys exist. '''
     def _validate_env(self):
-        """
-        Validate necessary environment variables.
-        Ensure API keys exist.
-        """
-
+        
+        ''' - This line creates a list of strings. 
+            - Each string is the exact name of an environment variable that the application must have to function correctly'''
         required_vars=[
             "GOOGLE_API_KEY",
             "GROQ_API_KEY"
         ]
 
+        ''' - This is a dictionary comprehension.
+            - It loops through your required_vars list and, for each variable name, 
+              it tries to fetch the corresponding value from the system's environment variables using os.getenv(key)'''
         self.api_keys={
             key:os.getenv(key) for key in required_vars
         }
@@ -60,7 +74,7 @@ class ModelLoader:
             "Environment variables validated",
             available_keys=[k for k in self.api_keys if self.api_keys[k]]
         )
-
+    ''' *********************************************************************************************************************************************************************************************************************** '''
 #   Load embeddings model
     def load_embeddings(self):
         """
@@ -73,7 +87,8 @@ class ModelLoader:
         except Exception as e:
             log.error("Error loading embedding model", error=str(e))
             raise DocumentPortalException("Failed to load embedding model", sys)
-        
+
+    ''' *********************************************************************************************************************************************************************************************************************** '''
     def load_llm(self):
         """
         Load and return the LLM model.
@@ -84,7 +99,7 @@ class ModelLoader:
 
         log.info("Loading LLM...")
         
-        provider_key = os.getenv("LLM_PROVIDER", "groq")  # Default groq
+        provider_key = os.getenv("LLM_PROVIDER", "google")  # Default groq
         
         if provider_key not in llm_block:
             log.error("LLM provider not found in config", provider_key=provider_key)
@@ -132,7 +147,7 @@ class ModelLoader:
             raise ValueError(f"Unsupported LLM provider: {provider}")
         
     
-    
+''' *********************************************************************************************************************************************************************************************************************** '''   
 if __name__ == "__main__":
     loader = ModelLoader()
     

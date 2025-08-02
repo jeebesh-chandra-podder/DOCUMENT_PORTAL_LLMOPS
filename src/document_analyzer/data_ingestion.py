@@ -43,7 +43,7 @@ class DocumentHandler:
             )
 
             self.log.info(
-                "PDFHandler initialized. Successfully created session directory",
+                "__init__() called Successfully. PDFHandler initialized. Successfully created session directory",
                 session_id=self.session_id,
                 session_path=self.session_path
             )
@@ -78,7 +78,7 @@ class DocumentHandler:
                 f.write(uploaded_file.getbuffer())
 
             self.log.info(
-                "PDF saved successfully", 
+                "save_pdf() called Successfully. PDF saved successfully", 
                 file=filename, 
                 save_path=save_path, 
                 session_id=self.session_id
@@ -115,7 +115,7 @@ class DocumentHandler:
             text = "\n".join(text_chunks)
 
             self.log.info(
-                "PDF read successfully", 
+                "read_pdf() called Successfully. PDF read successfully", 
                 pdf_path=pdf_path, 
                 session_id=self.session_id, 
                 pages=len(text_chunks)
