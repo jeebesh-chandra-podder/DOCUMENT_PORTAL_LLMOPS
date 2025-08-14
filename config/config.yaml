@@ -20,3 +20,9 @@ llm:
     model_name: "gemini-2.0-flash"
     temperature: 0
     max_output_tokens: 2048
+
+  gpt_oss:
+    provider: "gpt_oss"
+    model_name: "openai/gpt-oss-20b"
+    temperature: 0.2
+    max_output_tokens: 2048

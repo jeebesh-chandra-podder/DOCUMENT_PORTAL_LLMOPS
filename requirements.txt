@@ -3,6 +3,7 @@ python-dotenv
 ipykernel
 langchain_groq
 langchain_google_genai
+langchain_openai
 langchain_community
 pypdf
 faiss-cpu
@@ -12,7 +13,10 @@ PyMuPDF
 datetime
 
 pandas
+streamlit
+transformers
+torch
+accelerate
 -e .
-'''
-pip install -r requirements.txt
-'''
+
+#pip install -r requirements.txt
