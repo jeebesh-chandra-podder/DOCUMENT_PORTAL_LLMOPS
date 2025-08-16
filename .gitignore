@@ -7,3 +7,7 @@ logs/
 test.pyc
 notebook/data
 data/
+archive/
+*.pyc
+faiss_index/
+main_archive/
