@@ -17,16 +17,27 @@ from src.document_analyzer.data_analysis import DocumentAnalyzer
 from src.document_compare.document_comparator import DocumentComparatorLLM
 from src.document_chat.retrieval import ConversationalRAG
 
+''' - Config variables telling us where to save indexes and uploaded data.
+    - FAISS (vector DB) needs persistence, uploads need storage. Defaults exist, but environment overrides let your app adapt without changing code.'''
 FAISS_BASE = os.getenv("FAISS_BASE", "faiss_index")
 UPLOAD_BASE = os.getenv("UPLOAD_BASE", "data")
 FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")  # <--- keep consistent with save_local()
 
+''' - Creating the FastAPI app instance.
+    -  All routes (@app.get, @app.post) "attach" onto this object.'''
 app = FastAPI(title="Document Portal API", version="0.1")
 
+''' - Getting the project’s root directory (two levels up from this file). 
+    - Makes static/templates paths relative → portable across dev/prod.
+    - Path(__file__).resolve().parent.parent is a robust way to find the project root regardless of where the script runs from.
+    - Mounting static files allows serving CSS, JS, images directly. '''
 BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+''' - Configures Cross-Origin Resource Sharing to allow browser requests from any domain.
+    - During development, ["*"] is convenient, but this is a security anti-pattern for production.
+    - This screams "development configuration." In production, I'd specify exact origins like ["https://myapp.com", "https://api.myapp.com"].'''
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,17 +46,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+''' - Serves an HTML page as the application's homepage. 
+    - response_class=HTMLResponse tells FastAPI this returns HTML, improving documentation.
+    - no-store prevents browser caching, useful during development. 
+    - Passing request to template is required by Jinja2Templates. '''
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
     resp = templates.TemplateResponse("index.html", {"request": request})
     resp.headers["Cache-Control"] = "no-store"
     return resp
 
+''' - Provides a simple endpoint to verify the service is running. 
+    - Essential for production monitoring. Load balancers, orchestrators (Kubernetes), and monitoring systems use this to check service health.
+    - Notice this is synchronous (no async) because it's intentionally simple - we want health checks to be fast and not depend on external resources.'''
 @app.get("/health")
 def health() -> Dict[str, str]:
     return {"status": "ok", "service": "document-portal"}
 
 # ---------- ANALYZE ----------
+''' - Accepts a PDF upload, processes it, and returns analysis results. 
+    - FastAPIFileAdapter bridges FastAPI's UploadFile with the internal DocHandler interface.
+    - Specific HTTPExceptions are re-raised (they have proper status codes), while generic exceptions become 500 errors. '''
 @app.post("/analyze")
 async def analyze_document(file: UploadFile = File(...)) -> Any:
     try:
@@ -61,6 +82,10 @@ async def analyze_document(file: UploadFile = File(...)) -> Any:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
 
 # ---------- COMPARE ----------
+''' - Compares two uploaded documents and returns differences in a structured format.
+        - Multiple file uploads using separate parameter names for semantic clarity.
+        - _ = ref_path, act_path is a senior engineer pattern - acknowledging unused variables to prevent linter warnings while keeping them for debugging.
+        - The df.to_dict(orient="records") conversion suggests the backend uses pandas DataFrames but the API returns JSON-serializable dictionaries. '''
 @app.post("/compare")
 async def compare_documents(reference: UploadFile = File(...), actual: UploadFile = File(...)) -> Any:
     try:
@@ -79,6 +104,11 @@ async def compare_documents(reference: UploadFile = File(...), actual: UploadFil
         raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
 
 # ---------- CHAT: INDEX ----------
+''' - Builds a FAISS index for document retrieval from multiple uploaded files.
+    - Why this approach:
+        - Flexible parameter design - session isolation is optional.
+        - Sensible defaults for chunking parameters based on typical document processing needs.
+        - Type hints make the API self-documenting. '''
 @app.post("/chat/index")
 async def chat_build_index(
     files: List[UploadFile] = File(...),
